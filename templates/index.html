@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fuzzy Logic - Kecepatan Motor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Perhitungan Kecepatan dan Bensin Berdasarkan Ukuran Karburator</h2>
+
+    <form method="POST" class="mb-4">
+        <div class="mb-3">
+            <label class="form-label">Ukuran Karburator (cm³):</label>
+            <input type="number" step="0.1" name="karburator" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Hitung</button>
+    </form>
+
+    {% if result is not none %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4>Hasil Perhitungan</h4>
+            <p><strong>Ukuran Karburator:</strong> {{ input_value }} cm³</p>
+            <p><strong>Kecepatan Motor (hasil fuzzy):</strong> {{ result|round(2) }} km/jam</p>
+            <p><strong>Estimasi Kebutuhan Bensin untuk 100 km:</strong> {{ bensin|round(2) }} liter</p>
+
+            <h5 class="mt-4">Tabel Perhitungan Fuzzy</h5>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Ukuran Karburator</th>
+                        <th>Derajat Kecil</th>
+                        <th>Derajat Normal</th>
+                        <th>Derajat Besar</th>
+                        <th>Kecepatan (Fuzzy)</th>
+                        <th>Efisiensi (km/liter)</th>
+                        <th>Kebutuhan Bensin (liter)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ input_value }} cm³</td>
+                        <td>{{ degrees[0]|round(2) }}</td>
+                        <td>{{ degrees[1]|round(2) }}</td>
+                        <td>{{ degrees[2]|round(2) }}</td>
+                        <td>{{ result|round(2) }}</td>
+                        <td>
+                            {% if result <= 40 %} 40
+                            {% elif result <= 70 %} 30
+                            {% else %} 20
+                            {% endif %}
+                        </td>
+                        <td>{{ bensin|round(2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Diagram Batang -->
+    <h5>Diagram Batang Derajat Keanggotaan, Kecepatan, dan Bensin</h5>
+    <canvas id="barChart" height="120"></canvas>
+
+    <script>
+        const labels = ['Kecil', 'Normal', 'Besar', 'Kecepatan', 'Bensin'];
+        const dataValues = [
+            {{ degrees[0]|round(2) }},
+            {{ degrees[1]|round(2) }},
+            {{ degrees[2]|round(2) }},
+            {{ result|round(2) }},
+            {{ bensin|round(2) }}
+        ];
+
+        new Chart(document.getElementById('barChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Derajat Keanggotaan, Kecepatan (km/jam), dan Bensin (liter)',
+                    data: dataValues,
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4CAF50', '#9C27B0']
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: 100
+                    }
+                }
+            }
+        });
+    </script>
+
+    <!-- Diagram Fungsi Keanggotaan -->
+    <h5 class="mt-5">Diagram Fungsi Keanggotaan Fuzzy Sugeno Untuk Ukuran Karburator</h5>
+    <p class="text-muted">Menunjukkan tingkat keanggotaan (μ) untuk kategori Kecil, Normal, dan Besar berdasarkan ukuran karburator</p>
+    <canvas id="fuzzyChart" height="120"></canvas>
+
+    <script>
+        const fuzzyLabels = {{ x_vals|tojson }};
+        const dataKecil = {{ kecil_vals|tojson }};
+        const dataNormal = {{ normal_vals|tojson }};
+        const dataBesar = {{ besar_vals|tojson }};
+
+        new Chart(document.getElementById('fuzzyChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: fuzzyLabels,
+                datasets: [
+                    {
+                        label: 'Kecil (μ kecil)',
+                        data: dataKecil,
+                        borderColor: '#FF6384',
+                        fill: false
+                    },
+                    {
+                        label: 'Normal (μ normal)',
+                        data: dataNormal,
+                        borderColor: '#36A2EB',
+                        fill: false
+                    },
+                    {
+                        label: 'Besar (μ besar)',
+                        data: dataBesar,
+                        borderColor: '#FFCE56',
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 1.1,
+                        title: {
+                            display: true,
+                            text: 'Derajat Keanggotaan (μ)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Ukuran Karburator (cm³)'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+    <h5 class="mt-5">Visualisasi Hasil Fuzzy Berdasarkan Input</h5>
+<p class="text-muted">Menampilkan hubungan input (ukuran karburator) dan hasil output fuzzy (kecepatan dan bensin)</p>
+<canvas id="hasilChart" height="120"></canvas>
+
+<script>
+    const hasilLabels = ['Ukuran Karburator', 'Kecepatan', 'Bensin'];
+    const hasilData = [
+        {{ input_value|default(0)|round(2) }},
+        {{ result|default(0)|round(2) }},
+        {{ bensin|default(0)|round(2) }}
+    ];
+
+    new Chart(document.getElementById('hasilChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: hasilLabels,
+            datasets: [{
+                label: 'Simulasi Fuzzy',
+                data: hasilData,
+                borderColor: '#673AB7',
+                backgroundColor: 'rgba(103, 58, 183, 0.2)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#673AB7',
+                pointRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    suggestedMax: 100,
+                    title: {
+                        display: true,
+                        text: 'Nilai'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Tahapan: Input → Proses → Output'
+                    }
+                }
+            }
+        }
+    });
+</script>
+    {% endif %}
+</div>
+</body>
+</html>
