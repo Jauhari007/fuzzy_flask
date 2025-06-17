@@ -15,7 +15,7 @@ C:\xampp\htdocs\fuzzy_flask>py app.py
  * Serving Flask app 'app'
  * Debug mode: on
 WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
- * Running on http://127.0.0.1:5000
+ * Running on http://127.0.0.1:5000  <-- copy link ini setelah py app.py
 Press CTRL+C to quit
  * Restarting with stat
  * Debugger is active!
@@ -26,4 +26,5 @@ Press CTRL+C to quit
 127.0.0.1 - - [04/Jun/2025 03:47:38] "POST / HTTP/1.1" 200 -
 127.0.0.1 - - [04/Jun/2025 03:50:21] "POST / HTTP/1.1" 200 -
 
-C:\xampp\htdocs\fuzzy_flask>py app.pypy app.pypy app.pypy app.py
+(jika ingin memghentikan program klik CTRL+C)
+C:\xampp\htdocs\fuzzy_flask>
